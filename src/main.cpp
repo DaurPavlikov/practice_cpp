@@ -2,6 +2,36 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+GLfloat vertices[] = {
+    0.0f, 0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    -0.5f, -0.5f, 0.0f
+};
+
+GLfloat colors[] = {
+    1.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 1.0f
+};
+
+const char* vertex_shader = 
+"#version 460\n"
+"layout(location = 0) in vec3 vertex_pos;"
+"layout(location = 1) in vec3 vertex_color;"
+"out vec3 color;"
+"void main(){"
+"   color = vertex_color;"
+"   gl_Position = vec4(vertex_pos, 1.0);"
+"}";
+
+const char* fragment_shader =
+"#version 460\n"
+"in vec3 color;"
+"out vec4 fragment_color;"
+"void main(){"
+"   fragment_color = vec4(color, 1.0);"
+"}";
+
 int g_window_width = 1270;
 int g_window_height = 720;
 
@@ -24,7 +54,7 @@ int main(int argc, char** argv){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(g_window_width, g_window_height, "Dno Engine", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(g_window_width, g_window_height, "Dno Engine", nullptr, nullptr);
     if (!window){
         std::cout << "Window has been terminated." << std::endl;
         glfwTerminate();
@@ -49,12 +79,57 @@ int main(int argc, char** argv){
     std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
     std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
-    glClearColor(1, .5, 0, 1);
+    glClearColor(0, 0, 0, 1);
+
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vertex_shader, nullptr);
+    glCompileShader(vs);
+
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fragment_shader, nullptr);
+    glCompileShader(fs);
+
+    GLuint shader_program = glCreateProgram();
+    glAttachShader(shader_program, vs);
+    glAttachShader(shader_program, fs);
+    glLinkProgram(shader_program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    // VBO - Vertex Buffer Object
+    GLuint vertices_vbo = 0;
+    glGenBuffers(1, &vertices_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vertices_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    GLuint colors_vbo = 0;
+    glGenBuffers(1, &colors_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+    // VAO - Vertex Array Object
+    GLuint vao = 0;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    //Enable location in shaders
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertices_vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)){
+
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(shader_program);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
