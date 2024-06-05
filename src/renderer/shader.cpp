@@ -1,6 +1,8 @@
-#include "shader.hpp"
-
 #include <iostream>
+
+#include <glm/gtc/type_ptr.hpp>
+
+#include "shader.hpp"
 
 namespace Renderer{
     ShaderProgram::ShaderProgram(const std::string& vertex_shader, const std::string& fragment_shader){
@@ -75,5 +77,13 @@ namespace Renderer{
         m_is_compiled = shaderProgram.m_is_compiled;
         shaderProgram.m_id = 0;
         shaderProgram.m_is_compiled = false;
+    }
+
+    void ShaderProgram::set_int(const std::string& name, const GLint value){
+        glUniform1i(glGetUniformLocation(m_id, name.c_str()), value);
+    }
+
+    void ShaderProgram::set_matrix4(const std::string& name, const glm::mat4& matrix){
+        glUniformMatrix4fv(glGetUniformLocation(m_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
     }
 }

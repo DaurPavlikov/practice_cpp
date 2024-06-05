@@ -1,15 +1,19 @@
+#include <iostream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include <iostream>
+#include <glm/vec2.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "renderer/shader.hpp"
 #include "resources/resources_manager.hpp"
+#include "renderer/texture_2d.hpp"
 
 GLfloat vertices[] = {
-    0.0f, 0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    -0.5f, -0.5f, 0.0f
+    0.0f, 70.0f, 0.0f,
+    50.0f, -70.0f, 0.0f,
+    -40.0f, -60.0f, 0.0f
 };
 
 GLfloat colors[] = {
@@ -18,8 +22,13 @@ GLfloat colors[] = {
     0.0f, 0.0f, 1.0f
 };
 
-int g_window_width = 1270;
-int g_window_height = 720;
+GLfloat uv[] = {
+    0.5f, 1.0f,
+    1.0f, 0.0f,
+    0.0f, 0.0f
+};
+
+glm::vec2 window_size(1270, 720);
 
 void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode){
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
@@ -40,7 +49,7 @@ int main(int argc, char** argv){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(g_window_width, g_window_height, "Dno Engine", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(window_size.x, window_size.y, "Dno Engine", nullptr, nullptr);
     if (!window){
         std::cout << "Window has been terminated." << std::endl;
         glfwTerminate();
@@ -48,9 +57,9 @@ int main(int argc, char** argv){
     }
 
     glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height){
-        g_window_width = width;
-        g_window_height = height;
-        glViewport(0, 0, g_window_width, g_window_height);
+        window_size.x = width;
+        window_size.y = height;
+        glViewport(0, 0, width, height);
     });
     glfwSetKeyCallback(window, glfwKeyCallback);
 
@@ -67,12 +76,14 @@ int main(int argc, char** argv){
 
     glClearColor(0, 0, 0, 1);
     {
-        ResourcesManager res_manager(argv[0]);
-        auto pMainShader = res_manager.load_shader("main_shader", "res/shaders/vertex", "res/shaders/fragment");
-        if(!pMainShader){
+        ResourcesManager resources_manager(argv[0]);
+        auto main_shader_program = resources_manager.load_shader("main_shader", "res/shaders/vertex", "res/shaders/fragment");
+        if(!main_shader_program){
             std::cerr << "Can't create shader program: " << "main_shader" << std::endl;
             return -1;
         }
+
+        auto loaded_texture = resources_manager.load_texture("tileset", "res/textures/tileset.png");
 
         // VBO - Vertex Buffer Object
         GLuint vertices_vbo = 0;
@@ -84,6 +95,11 @@ int main(int argc, char** argv){
         glGenBuffers(1, &colors_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+        GLuint uv_vbo = 0;
+        glGenBuffers(1, &uv_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(uv), uv, GL_STATIC_DRAW);
 
         // VAO - Vertex Array Object
         GLuint vao = 0;
@@ -99,13 +115,36 @@ int main(int argc, char** argv){
         glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+        main_shader_program->use();
+        main_shader_program->set_int("texture_0", 0);
+
+        glm::mat4 model_matrix_0 = glm::mat4(1.0f);
+        model_matrix_0 = glm::translate(model_matrix_0, glm::vec3(100.0f, 50.0f, 0.0f));
+
+        glm::mat4 model_matrix_1 = glm::mat4(1.0f);
+        model_matrix_1 = glm::translate(model_matrix_1, glm::vec3(590.0f, 50.0f, 0.0f));
+
+        //static_cast<float>()
+        glm::mat4 projection_matrix = glm::ortho(0.0f, static_cast<float>(window_size.x), 0.0f, static_cast<float>(window_size.y), -100.0f, 100.0f);
+
+        main_shader_program->set_matrix4("projection_matrix", projection_matrix);
+
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window)){
 
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT);
-            pMainShader->use();
+            main_shader_program->use();
             glBindVertexArray(vao);
+            loaded_texture->bind();
+
+            main_shader_program->set_matrix4("model_matrix", model_matrix_0);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            main_shader_program->set_matrix4("model_matrix", model_matrix_1);
             glDrawArrays(GL_TRIANGLES, 0, 3);
 
             /* Swap front and back buffers */
