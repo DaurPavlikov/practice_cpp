@@ -1,6 +1,7 @@
 #include "resources_manager.hpp"
 #include "../renderer/shader.hpp"
 #include "../renderer/texture_2d.hpp"
+#include "../renderer/sprite.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
@@ -68,7 +69,13 @@ std::shared_ptr<Renderer::Texture2D> ResourcesManager::load_texture(const std::s
         return nullptr;
     }
 
-    std::shared_ptr<Renderer::Texture2D> new_texture = m_textures.emplace(texture_name, std::make_shared<Renderer::Texture2D>(width, height, pixels, channels, GL_NEAREST, GL_CLAMP_TO_EDGE)).first->second;
+    std::shared_ptr<Renderer::Texture2D> new_texture = m_textures.emplace(texture_name, std::make_shared<Renderer::Texture2D>(
+        width,
+        height,
+        pixels,
+        channels,
+        GL_NEAREST,
+        GL_CLAMP_TO_EDGE)).first->second;
     stbi_image_free(pixels);
     return new_texture;
 }
@@ -79,5 +86,37 @@ std::shared_ptr<Renderer::Texture2D> ResourcesManager::get_texture(const std::st
         return it->second;
     }
     std::cerr << "Can't find textures: " << texture_name << std::endl;
+    return nullptr;
+}
+
+std::shared_ptr<Renderer::Sprite> ResourcesManager::load_sprite(const std::string& sprite_name,
+                                                                const std::string& texture_name,
+                                                                const std::string& shader_name,
+                                                                const unsigned int sprite_width,
+                                                                const unsigned int sprite_height){
+    auto texture = get_texture(texture_name);
+    if (!texture){
+        std::cerr << "Can't find texture " << texture_name << "for the sprite: " << sprite_name << std::endl;
+    }
+
+    auto shader = get_shader(shader_name);
+    if (!shader){
+        std::cerr << "Can't find shader " << shader_name << "for the sprite: " << sprite_name << std::endl;
+    }
+
+    std::shared_ptr<Renderer::Sprite> new_sprite = m_sprites.emplace(texture_name, std::make_shared<Renderer::Sprite>(
+        texture,
+        shader,
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(sprite_width, sprite_height))).first->second;
+    return new_sprite;
+}
+
+std::shared_ptr<Renderer::Sprite> ResourcesManager::get_sprite(const std::string& sprite_name){
+    SpritesMap::const_iterator it = m_sprites.find(sprite_name);
+    if(it != m_sprites.end()){
+        return it->second;
+    }
+    std::cerr << "Can't find sprite: " << sprite_name << std::endl;
     return nullptr;
 }

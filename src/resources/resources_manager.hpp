@@ -7,6 +7,7 @@
 namespace Renderer{
     class ShaderProgram;
     class Texture2D;
+    class Sprite;
 }
 
 class ResourcesManager{
@@ -27,6 +28,13 @@ public:
     std::shared_ptr<Renderer::Texture2D> load_texture(const std::string& texture_name, const std::string& texture_path);
     std::shared_ptr<Renderer::Texture2D> get_texture(const std::string& texture_name);
 
+    std::shared_ptr<Renderer::Sprite> load_sprite(const std::string& sprite_name,
+                                                 const std::string& texture_name,
+                                                 const std::string& shader_name,
+                                                 const unsigned int sprite_width,
+                                                 const unsigned int sprite_height);
+    std::shared_ptr<Renderer::Sprite> get_sprite(const std::string& sprite_name);
+
 private:
     std::string get_file_path(const std::string& relative_path) const;
 
@@ -35,6 +43,9 @@ private:
 
     typedef std::map<const std::string, std::shared_ptr<Renderer::Texture2D>> TexturesMap;
     TexturesMap m_textures;
+
+    typedef std::map<const std::string, std::shared_ptr<Renderer::Sprite>> SpritesMap;
+    SpritesMap m_sprites;
 
     std::string m_path;
 };
