@@ -11,22 +11,23 @@
 #include "renderer/sprite.hpp"
 #include "resources/resources_manager.hpp"
 
-GLfloat vertices[] = {
-    0.0f, 70.0f, 0.0f,
-    50.0f, -70.0f, 0.0f,
-    -40.0f, -60.0f, 0.0f
-};
-/*
-GLfloat colors[] = {
-    1.0f, 0.0f, 0.0f,
+//   x     y     z
+const GLfloat vertices[] = {
+    0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 1.0f
+    1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
+    1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.0f
 };
-*/
-GLfloat uv[] = {
-    0.5f, 1.0f,
+//   u     v
+const GLfloat uv[] = {
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f,
+    1.0f, 1.0f,
     1.0f, 0.0f,
-    0.0f, 0.0f
+    0.0f, 0.0f,
 };
 
 glm::vec2 window_size(1270, 720);
@@ -78,7 +79,7 @@ int main(int argc, char** argv){
     glClearColor(0, 0, 0, 1);
     {
         ResourcesManager resources_manager(argv[0]);
-        auto main_shader_program = resources_manager.load_shader("main_shader", "res/shaders/sprite.vert", "res/shaders/sprite.frag");
+        auto main_shader_program = resources_manager.load_shader("main_shader", "res/shaders/texture.vert", "res/shaders/texture.frag");
         if(!main_shader_program){
             std::cerr << "Can't create shader program: " << "main_shader" << std::endl;
             return -1;
@@ -90,59 +91,37 @@ int main(int argc, char** argv){
             return -1;
         }
 
-        auto loaded_texture = resources_manager.load_texture("tileset", "res/textures/tileset.png");
+        auto tileset = resources_manager.load_texture("tileset", "res/textures/tileset.png");
+        auto sprite_texture = resources_manager.load_texture("sara_sprite", "res/textures/SaraFullSheet.png");
 
-        auto loaded_sprite = resources_manager.load_sprite("sprite", "tileset", "sprite_shader", 200, 200);
-        loaded_sprite->set_position(glm::vec2(300, 200));
+        std::vector<std::string> tiles_names = {"gray_bricks", "roof", "roof2", "planks", "grass"};
+        auto p_teleset = resources_manager.load_texture_atlas("default_tileset", "res/textures/tileset.png", std::move(tiles_names), 128, 128);
 
-        // VBO - Vertex Buffer Object
-        GLuint vertices_vbo = 0;
-        glGenBuffers(1, &vertices_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vertices_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        /*
-        GLuint colors_vbo = 0;
-        glGenBuffers(1, &colors_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
-        */
-        GLuint uv_vbo = 0;
-        glGenBuffers(1, &uv_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(uv), uv, GL_STATIC_DRAW);
+        auto tile = resources_manager.load_sprite("tileset", "default_tileset", "sprite_shader", 256, 256, "grass");
 
-        // VAO - Vertex Array Object
-        GLuint vao = 0;
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+        auto sprite = resources_manager.load_sprite("sprite", "sara_sprite", "sprite_shader", 416 * 2, 672 * 2);
 
-        //Enable location in shaders
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vertices_vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        sprite->set_position(glm::vec2(300, 200));
+        tile->set_position(glm::vec2(300, 200));
 
-        //glEnableVertexAttribArray(1);
-        //glBindBuffer(GL_ARRAY_BUFFER, colors_vbo);
-        //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, uv_vbo);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
+        glm::mat4 projection_matrix = glm::ortho(0.0f, static_cast<float>(window_size.x), 0.0f, static_cast<float>(window_size.y), -100.0f, 100.0f);
+/*
         main_shader_program->use();
         main_shader_program->set_int("texture_0", 0);
-
+        main_shader_program->set_matrix4("projection_matrix", projection_matrix);
+        
         glm::mat4 model_matrix_0 = glm::mat4(1.0f);
-        model_matrix_0 = glm::translate(model_matrix_0, glm::vec3(100.0f, 50.0f, 0.0f));
-
-        glm::mat4 model_matrix_1 = glm::mat4(1.0f);
-        model_matrix_1 = glm::translate(model_matrix_1, glm::vec3(590.0f, 50.0f, 0.0f));
+        model_matrix_0 = glm::translate(model_matrix_0, glm::vec3(0.0f, 0.0f, 0.0f));
+        model_matrix_0 = glm::scale(model_matrix_0, glm::vec3(1000.0f, 1000.0f, 1000.0f));
 
         //static_cast<float>()
         glm::mat4 projection_matrix = glm::ortho(0.0f, static_cast<float>(window_size.x), 0.0f, static_cast<float>(window_size.y), -100.0f, 100.0f);
 
         main_shader_program->set_matrix4("projection_matrix", projection_matrix);
-
+        */
         sprite_shader_program->use();
         sprite_shader_program->set_int("texture_0", 0);
         sprite_shader_program->set_matrix4("projection_matrix", projection_matrix);
@@ -152,16 +131,9 @@ int main(int argc, char** argv){
 
             /* Render here */
             glClear(GL_COLOR_BUFFER_BIT);
-            main_shader_program->use();
-            glBindVertexArray(vao);
-            loaded_texture->bind();
 
-            main_shader_program->set_matrix4("model_matrix", model_matrix_0);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            main_shader_program->set_matrix4("model_matrix", model_matrix_1);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-
-            loaded_sprite->render();
+            tile->render();
+            //sprite->render();
 
             /* Swap front and back buffers */
             glfwSwapBuffers(window);

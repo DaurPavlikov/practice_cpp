@@ -93,19 +93,21 @@ std::shared_ptr<Renderer::Sprite> ResourcesManager::load_sprite(const std::strin
                                                                 const std::string& texture_name,
                                                                 const std::string& shader_name,
                                                                 const unsigned int sprite_width,
-                                                                const unsigned int sprite_height){
+                                                                const unsigned int sprite_height,
+                                                                const std::string& tile_name){
     auto texture = get_texture(texture_name);
     if (!texture){
-        std::cerr << "Can't find texture " << texture_name << "for the sprite: " << sprite_name << std::endl;
+        std::cerr << "Can't find texture " << texture_name << " for the sprite: " << sprite_name << std::endl;
     }
 
     auto shader = get_shader(shader_name);
     if (!shader){
-        std::cerr << "Can't find shader " << shader_name << "for the sprite: " << sprite_name << std::endl;
+        std::cerr << "Can't find shader " << shader_name << " for the sprite: " << sprite_name << std::endl;
     }
 
     std::shared_ptr<Renderer::Sprite> new_sprite = m_sprites.emplace(texture_name, std::make_shared<Renderer::Sprite>(
         texture,
+        tile_name,
         shader,
         glm::vec2(0.0f, 0.0f),
         glm::vec2(sprite_width, sprite_height))).first->second;
@@ -119,4 +121,31 @@ std::shared_ptr<Renderer::Sprite> ResourcesManager::get_sprite(const std::string
     }
     std::cerr << "Can't find sprite: " << sprite_name << std::endl;
     return nullptr;
+}
+
+std::shared_ptr<Renderer::Texture2D> ResourcesManager::load_texture_atlas(const std::string& texture_name,
+                                                                          const std::string& texture_path,
+                                                                          const std::vector<std::string> tile,
+                                                                          const unsigned int tile_sheet_width,
+                                                                          const unsigned int tile_sheet_height){
+    auto p_texture = load_texture(std::move(texture_name), std::move(texture_path));
+    if (p_texture){
+        const unsigned int texture_width = p_texture->width();
+        const unsigned int texture_height = p_texture->height();
+        unsigned int tile_offset_x = 0;
+        unsigned int tile_offset_y = texture_height;
+        for (const auto& current_tile_name : tile){
+            glm::vec2 left_bottom_uv(static_cast<float>(tile_offset_x) / texture_width,
+                                     static_cast<float>(tile_offset_y - tile_sheet_height) / texture_height);
+            glm::vec2 right_top_uv(static_cast<float>(tile_offset_x + tile_sheet_width) / texture_width,
+                                   static_cast<float>(tile_offset_y) / texture_height);
+            p_texture->add_tile(std::move(current_tile_name), left_bottom_uv, right_top_uv);
+            tile_offset_x += tile_sheet_width;
+            if (tile_offset_x >= texture_width){
+                tile_offset_x = 0;
+                tile_offset_y -= tile_sheet_height;
+            }
+        }
+    }
+    return p_texture;
 }

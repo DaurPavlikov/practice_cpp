@@ -57,4 +57,17 @@ namespace Renderer{
     void Texture2D::bind() const{
         glBindTexture(GL_TEXTURE_2D, m_id);
     }
+
+    void Texture2D::add_tile(std::string name, const glm::vec2& left_bottom_uv, const glm::vec2& right_top_uv){
+        m_tile.emplace(std::move(name), Tile(left_bottom_uv, right_top_uv));
+    }
+
+    const Texture2D::Tile& Texture2D::get_tile(const std::string& name) const{
+        auto it = m_tile.find(name);
+        if (it != m_tile.end()){
+            return it->second;
+        }
+        const static Tile default_tile;
+        return default_tile;
+    }
 }

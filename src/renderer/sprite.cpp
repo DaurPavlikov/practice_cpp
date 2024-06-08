@@ -7,15 +7,16 @@
 
 namespace Renderer{
     Sprite::Sprite(const std::shared_ptr<Texture2D> texture,
-           const std::shared_ptr<ShaderProgram> shader_program,
-           const glm::vec2& position,
-           const glm::vec2& size,
-           const float rotation)
-           : m_texture(std::move(texture))
-           , m_shader_program(std::move(shader_program))
-           , m_position(position)
-           , m_rotation(rotation)
-           , m_size(size){
+                   const std::string initial_tile,
+                   const std::shared_ptr<ShaderProgram> shader_program,
+                   const glm::vec2& position,
+                   const glm::vec2& size,
+                   const float rotation)
+                   : m_texture(std::move(texture))
+                   , m_shader_program(std::move(shader_program))
+                   , m_position(position)
+                   , m_rotation(rotation)
+                   , m_size(size){
         // 2--3   1
         // | /  / |
         // 1   3--2
@@ -28,14 +29,16 @@ namespace Renderer{
             1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f
         };
+
+        auto tile = texture->get_tile(std::move(initial_tile));
         //   u     v
         const GLfloat uv[] = {
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f,
+            tile.left_bottom_uv.x, tile.left_bottom_uv.y,
+            tile.left_bottom_uv.x, tile.right_top_uv.y,
+            tile.right_top_uv.x, tile.right_top_uv.y,
+            tile.right_top_uv.x, tile.right_top_uv.y,
+            tile.right_top_uv.x, tile.left_bottom_uv.y,
+            tile.left_bottom_uv.x, tile.left_bottom_uv.y
         };
 
         glGenVertexArrays(1, &m_vao);
@@ -54,7 +57,7 @@ namespace Renderer{
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 6);
         glBindVertexArray(0);
     }
 

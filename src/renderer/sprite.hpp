@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <memory>
 
 #include <glad/glad.h>
@@ -11,6 +12,7 @@ namespace Renderer{
     class Sprite{
     public:
         Sprite(const std::shared_ptr<Texture2D> texture,
+               const std::string initial_tile,
                const std::shared_ptr<ShaderProgram> shader_program,
                const glm::vec2& position = glm::vec2(0.0f),
                const glm::vec2& size = glm::vec2(1.0f),

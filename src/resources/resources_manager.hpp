@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <vector>
 
 namespace Renderer{
     class ShaderProgram;
@@ -29,11 +30,18 @@ public:
     std::shared_ptr<Renderer::Texture2D> get_texture(const std::string& texture_name);
 
     std::shared_ptr<Renderer::Sprite> load_sprite(const std::string& sprite_name,
-                                                 const std::string& texture_name,
-                                                 const std::string& shader_name,
-                                                 const unsigned int sprite_width,
-                                                 const unsigned int sprite_height);
+                                                  const std::string& texture_name,
+                                                  const std::string& shader_name,
+                                                  const unsigned int sprite_width,
+                                                  const unsigned int sprite_height,
+                                                  const std::string& tile_name = "default");
     std::shared_ptr<Renderer::Sprite> get_sprite(const std::string& sprite_name);
+
+    std::shared_ptr<Renderer::Texture2D> load_texture_atlas(const std::string& texture_name,
+                                                            const std::string& texture_path,
+                                                            const std::vector<std::string> tile,
+                                                            const unsigned int tile_sheet_width,
+                                                            const unsigned int tile_sheet_height);
 
 private:
     std::string get_file_path(const std::string& relative_path) const;
