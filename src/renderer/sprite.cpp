@@ -6,14 +6,14 @@
 #include "texture_2d.hpp"
 
 namespace Renderer{
-    Sprite::Sprite(const std::shared_ptr<Texture2D> texture,
+    Sprite::Sprite(const std::shared_ptr<Texture2D> p_texture,
                    const std::string initial_tile,
-                   const std::shared_ptr<ShaderProgram> shader_program,
+                   const std::shared_ptr<ShaderProgram> p_shader_program,
                    const glm::vec2& position,
                    const glm::vec2& size,
                    const float rotation)
-                   : m_texture(std::move(texture))
-                   , m_shader_program(std::move(shader_program))
+                   : m_texture(std::move(p_texture))
+                   , m_shader_program(std::move(p_shader_program))
                    , m_position(position)
                    , m_rotation(rotation)
                    , m_size(size){
@@ -30,7 +30,7 @@ namespace Renderer{
             0.0f, 0.0f, 0.0f
         };
 
-        auto tile = texture->get_tile(std::move(initial_tile));
+        auto tile = p_texture->get_tile(std::move(initial_tile));
         //   u     v
         const GLfloat uv[] = {
             tile.left_bottom_uv.x, tile.left_bottom_uv.y,
